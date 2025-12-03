@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MacStudy v1.1</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #888;
+            --window-bg: #ffffff;
+            --border-color: #000000;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; 
+            height: 100dvh;
+            overflow: hidden; 
+            box-sizing: border-box;
+            background-image: 
+                linear-gradient(45deg, #aaa 25%, transparent 25%), 
+                linear-gradient(-45deg, #aaa 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #aaa 75%), 
+                linear-gradient(-45deg, transparent 75%, #aaa 75%);
+            background-size: 4px 4px;
+            user-select: none;
+            color: #000;
+        }
+
+        .window {
+            background: var(--window-bg);
+            border: 2px solid var(--border-color);
+            box-shadow: 6px 6px 0px rgba(0,0,0,0.3);
+            width: 95%;
+            max-width: 700px;
+            max-height: 98dvh; 
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border-radius: 2px;
+        }
+        
+        .window.shake-effect { animation: shake 0.4s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .title-bar {
+            background: repeating-linear-gradient(0deg, #fff, #fff 2px, #000 2px, #000 4px);
+            height: 32px; min-height: 32px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex; align-items: center; justify-content: center;
+            padding: 0 10px; flex-shrink: 0;
+        }
+
+        .title-box {
+            background: #fff; padding: 0 15px; font-weight: bold; font-size: 1.3rem;
+            border-left: 2px solid #000; border-right: 2px solid #000; letter-spacing: 1px;
+        }
+
+        .content {
+            padding: 15px; display: flex; flex-direction: column; gap: 10px;
+            overflow-y: auto; flex: 1; position: relative;
+        }
+
+        /* --- CONTROLS --- */
+        .control-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        label { font-weight: bold; text-transform: uppercase; font-size: 1rem; }
+
+        select, input[type="text"] {
+            font-family: 'VT323', monospace; font-size: 1.2rem; padding: 8px;
+            border: 2px solid #000; background: #fff; border-radius: 0;
+            width: 100%; box-sizing: border-box; outline: none;
+        }
+        input[type="text"]:focus { background: #eee; }
+        input[type="text"]:disabled { background: #e0e0e0; color: #555; border: 2px dashed #999; }
+
+        .btn {
+            font-family: 'VT323', monospace; background: #fff; border: 2px solid #000;
+            padding: 10px; font-size: 1.4rem; cursor: pointer;
+            box-shadow: 3px 3px 0 #000; text-align: center;
+            transition: transform 0.1s, box-shadow 0.1s; position: relative;
+        }
+        .btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 #000; background: #000; color: #fff; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; background: #ddd; box-shadow: none; border: 2px dotted #999; }
+        .btn-block { width: 100%; }
+        .btn-small { font-size: 1.1rem; padding: 5px 10px; box-shadow: 2px 2px 0 #000; }
+        .btn.selected { background: #000; color: #fff; box-shadow: inset 3px 3px 0 #555; }
+        
+        /* Subject Toggle */
+        .subject-toggle { display: flex; gap: 10px; margin-bottom: 10px; }
+        .subject-btn { flex: 1; border: 2px solid #000; padding: 10px; cursor: pointer; text-align: center; font-size: 1.2rem; opacity: 0.5; background: #eee; }
+        .subject-btn.active { opacity: 1; background: #fff; font-weight: bold; border-bottom: 4px solid #000; }
+
+        /* Review Button */
+        #btn-review { border: 2px solid #000; border-style: double; font-weight: bold; background: #eee; color: #555; margin-bottom: 10px; }
+        #btn-review.has-data { background: #fff; color: #000; border-style: solid; box-shadow: 3px 3px 0 #000; }
+
+        /* --- SCREENS --- */
+        .screen { display: none; height: 100%; flex-direction: column; }
+        .screen.active { display: flex; }
+
+        .stats-bar {
+            display: flex; justify-content: space-between;
+            border-bottom: 2px dashed #000; padding-bottom: 5px; margin-bottom: 10px;
+            flex-shrink: 0; font-size: 1.2rem;
+        }
+
+        .activity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; } 
+        .activity-btn { padding: 15px 5px; font-size: 1.3rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 80px; }
+
+        .question-box { text-align: center; margin: 10px 0; flex-shrink: 0; }
+        .main-word { font-size: 2.2rem; font-weight: bold; display: block; line-height: 1.1; margin-bottom: 5px;}
+        .sub-text { font-size: 1.2rem; font-style: italic; color: #444; white-space: pre-wrap;}
+        
+        .feedback-area { 
+            min-height: 40px; text-align: center; font-weight: bold; margin-top: 10px;
+            flex-shrink: 0; font-size: 1.2rem; border-top: 1px dotted #000; padding-top: 5px;
+        }
+        .feedback-area.correct-state { background: #fff; color: #000; }
+        .feedback-area.wrong-state { background: #000; color: #fff; }
+
+        .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-grow: 1; overflow-y: auto; }
+        .choices-grid .btn { font-size: 1.1rem; padding: 8px; word-wrap: break-word; white-space: normal; line-height: 1.1; }
+
+        /* Science Cloze Style */
+        .cloze-text { font-size: 1.4rem; line-height: 1.6; text-align: center; }
+        .cloze-input { 
+            border: none; border-bottom: 2px solid #000; 
+            font-family: 'VT323', monospace; font-size: 1.4rem; 
+            text-align: center; width: 120px; background: #eee;
+            display: inline-block; padding: 0 5px;
+        }
+        .cloze-input:focus { background: #fff; outline: none; }
+
+        /* Folder Sort */
+        .folder-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; flex-grow: 1; }
+        .folder-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px 8px 0 0; border-width: 3px; }
+
+        .card-frame {
+            border: 3px solid #000; background: #fff; padding: 20px; flex-grow: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 6px 6px 0 #ccc; margin-bottom: 10px; position: relative; cursor: pointer;
+        }
+        .card-header-stripe {
+            position: absolute; top: 4px; left: 4px; right: 4px; height: 10px;
+            background: repeating-linear-gradient(45deg, #000, #000 1px, #fff 1px, #fff 3px);
+            border: 1px solid #000;
+        }
+
+        .bottom-nav { margin-top: auto; display: flex; flex-direction: column; gap: 5px; }
+
+    </style>
+</head>
+<body>
+
+<div class="window" id="main-window">
+    <div class="title-bar">
+        <div class="title-box">MacStudy v1.1</div>
+    </div>
+    
+    <div class="content">
+        
+        <!-- === MAIN MENU === -->
+        <div id="start-screen" class="screen active">
+            <div style="text-align: center; border: 2px solid #000; padding: 5px; margin-bottom: 10px; background: #eee;">
+                TOTAL SCORE: <span id="total-xp">0</span> XP
+            </div>
+
+            <button id="btn-review" class="btn btn-block" onclick="startReview()" disabled>
+                REVIEW MISSED ITEMS (0)
+            </button>
+
+            <div class="subject-toggle">
+                <div id="tab-lit" class="subject-btn active" onclick="setSubject('lit')">📖 LITERATURE</div>
+                <div id="tab-sci" class="subject-btn" onclick="setSubject('sci')">🔬 SCIENCE</div>
+            </div>
+
+            <div class="control-group">
+                <label>Input Mode (Quiz Only):</label>
+                <select id="input-mode">
+                    <option value="choice">Multiple Choice</option>
+                    <option value="type">Typing</option>
+                </select>
+            </div>
+
+            <!-- Dynamic Menu Grid based on Subject -->
+            <div id="menu-grid" class="activity-grid">
+                <!-- Injected by JS -->
+            </div>
+
+            <div class="bottom-nav">
+                <button class="btn btn-danger" onclick="resetData()">Reset Progress</button>
+            </div>
+        </div>
+
+        <!-- === QUIZ SCREEN (Definitions / Concepts) === -->
+        <div id="quiz-screen" class="screen">
+            <div class="stats-bar">
+                <span id="quiz-title">Quiz</span>
+                <span id="quiz-progress">1/10</span>
+            </div>
+            <div class="question-box">
+                <span class="sub-text" id="quiz-prompt">Definition:</span>
+                <span id="quiz-main" class="main-word" style="font-size: 1.5rem;">...</span>
+            </div>
+            <div id="quiz-area" style="flex-grow: 1; overflow-y: auto; display:flex; flex-direction:column; justify-content:center;"></div>
+            <div id="quiz-feedback" class="feedback-area"></div>
+            <button class="btn btn-small" onclick="quitGame()">Main Menu</button>
+        </div>
+
+        <!-- === CLOZE SCREEN (Fill in Blank) === -->
+        <div id="cloze-screen" class="screen">
+            <div class="stats-bar">
+                <span>Lab Notes</span>
+                <span id="cloze-progress">1/10</span>
+            </div>
+            <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px;">
+                <div id="cloze-container" class="cloze-text">
+                    <!-- Text and Input injected here -->
+                </div>
+                <button id="cloze-check-btn" class="btn btn-block" style="margin-top: 20px;" onclick="checkCloze()">Check Answer</button>
+            </div>
+            <div id="cloze-feedback" class="feedback-area"></div>
+            <button class="btn btn-small" onclick="quitGame()">Main Menu</button>
+        </div>
+
+        <!-- === SORT SCREEN (Science) === -->
+        <div id="sort-screen" class="screen">
+            <div class="stats-bar">
+                <span>Concept Sort</span>
+                <span id="sort-score">Score: 0</span>
+            </div>
+            <div class="question-box">
+                <span class="sub-text">Which topic does this belong to?</span>
+                <span id="sort-term" class="main-word" style="margin-top: 10px;">...</span>
+            </div>
+            <div class="folder-container">
+                <button class="btn folder-btn" onclick="checkSort('Owens Lake')">
+                    <span style="font-size:2rem;">🏞️</span> Owens Lake
+                </button>
+                <button class="btn folder-btn" onclick="checkSort('Water Cycle')">
+                    <span style="font-size:2rem;">🌧️</span> Water Cycle
+                </button>
+            </div>
+            <div id="sort-feedback" class="feedback-area"></div>
+            <button class="btn btn-small" onclick="quitGame()">Main Menu</button>
+        </div>
+
+        <!-- === CARDS SCREEN === -->
+        <div id="cards-screen" class="screen">
+            <div class="stats-bar">
+                <span>Flash Cards</span>
+                <span id="card-count">1/10</span>
+            </div>
+            <div class="card-frame" onclick="flipCard()">
+                <div class="card-header-stripe"></div>
+                <div id="card-content" style="text-align: center;"></div>
+                <div style="position: absolute; bottom: 5px; right: 5px; font-size: 0.8rem; color: #888;">Click to flip</div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button class="btn" style="flex:1" onclick="prevCard()">&lt;</button>
+                <button class="btn" style="flex:1" onclick="flipCard()">Flip</button>
+                <button class="btn" style="flex:1" onclick="nextCard()">&gt;</button>
+            </div>
+            <button class="btn btn-small" onclick="quitGame()">Main Menu</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- DATA PARSED FROM USER FILE ---
+    const LIT_DATA = [
+        { w: "gallivanting", d: "roaming, wandering", u: "Ch 1" },
+        { w: "degenerating", d: "declining, falling apart, breaking down", u: "Ch 1" },
+        { w: "beckoning", d: "gesturing, signaling", u: "Ch 1" },
+        { w: "extraordinary", d: "amazing, exceptional, remarkable", u: "Ch 1" },
+        { w: "cantankerous", d: "bad-tempered, angry", u: "Ch 1" },
+        { w: "considerate", d: "thoughtful, helpful", u: "Ch 1" }, 
+        { w: "obstinate", d: "stubborn, refusing to change", u: "Ch 1" },
+        { w: "sorely", d: "greatly, to a high degree, painfully", u: "Ch 1" },
+        { w: "sympathetically", d: "understandingly, kindheartedly", u: "Ch 2" },
+        { w: "sensed", d: "felt, perceived, got the impression", u: "Ch 2" },
+        { w: "gramophone", d: "record player", u: "Ch 2" },
+        { w: "frail", d: "weak, delicate", u: "Ch 2" },
+        { w: "restoring", d: "bring back, reinstate", u: "Ch 2" },
+        { w: "dummkopf", d: "(German) fool, dumb person", u: "Ch 2" },
+        { w: "utter", d: "absolute, complete", u: "Ch 2" },
+        { w: "pacifist", d: "peace lover, person who resists fighting", u: "Ch 2" },
+        { w: "maternal", d: "motherly, protective, caring", u: "Ch 3" },
+        { w: "attentive", d: "alert, aware", u: "Ch 3" },
+        { w: "dejected", d: "downcast, downhearted", u: "Ch 3" },
+        { w: "inquisitive", d: "curious, interested", u: "Ch 3" },
+        { w: "confounded", d: "surprised, amazed, startled", u: "Ch 3" },
+        { w: "regretted", d: "be sorry, felt feel remorse", u: "Ch 3" },
+        { w: "confided", d: "revealed, disclosed, told in secret", u: "Ch 3" },
+        { w: "dreadful", d: "terrible, horrible", u: "Ch 3" }
+    ];
+
+    const SCI_DATA = [
+        { q: "___ was a large body of water created by the Owens River.", a: "Owens Lake", t: "Owens Lake" },
+        { q: "The ___ Effect causes clouds to rise over mountains and condense.", a: "Rain Shadow", t: "Owens Lake" },
+        { q: "The Owens Valley has a ___ climate.", a: "desert", t: "Owens Lake" },
+        { q: "Los Angeles built an ___ to divert water from the Owens River.", a: "aqueduct", t: "Owens Lake" },
+        { q: "Water vapor droplets cluster together to form a ___.", a: "cloud", t: "Water Cycle" },
+        { q: "When a cloud is over-saturated, gravity causes ___.", a: "precipitation", t: "Water Cycle" },
+        { q: "Rising global temperatures lead to more ___ and evaporation.", a: "melting", t: "Water Cycle" },
+        { q: "More than ___% of precipitation falls on the ocean.", a: "75", t: "Water Cycle" },
+        { q: "Water stored in small spaces between rocks is an ___.", a: "aquifer", t: "Water Cycle" },
+        { q: "Water stored in a body (above or below ground) is a ___.", a: "reservoir", t: "Water Cycle" },
+        { q: "Groundwater is replenished through ___ and percolation.", a: "infiltration", t: "Water Cycle" },
+        { q: "Glaciers form from the ___ of layers of snow and ice.", a: "pressure", t: "Water Cycle" }
+    ];
+
+    let state = {
+        subject: 'lit',
+        xp: 0,
+        pool: [],
+        currentIndex: 0,
+        inputMode: 'choice',
+        currentActivity: null,
+        missed: [],
+        isReviewing: false,
+        // Game Specific
+        clozeAns: ""
+    };
+
+    const STORAGE_KEY = 'macstudy_v1_1';
+
+    window.onload = () => {
+        loadData();
+        updateMenu();
+        
+        // Global Enter Key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const inputs = document.querySelectorAll('input[type="text"]');
+                const submitBtns = document.querySelectorAll('.btn-block');
+                if(inputs.length > 0 && !inputs[0].disabled) {
+                     if(submitBtns.length > 0 && !submitBtns[0].disabled) submitBtns[0].click();
+                }
+            }
+        });
+    };
+
+    function loadData() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const data = JSON.parse(saved);
+            state.xp = data.xp || 0;
+            state.missed = data.missed || [];
+        }
+        updateXP();
+        updateReviewBtn();
+    }
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ xp: state.xp, missed: state.missed }));
+        updateXP();
+        updateReviewBtn();
+    }
+
+    function updateXP() { document.getElementById('total-xp').innerText = state.xp; }
+    
+    function updateReviewBtn() {
+        const btn = document.getElementById('btn-review');
+        const count = state.missed.length;
+        btn.innerText = state.isReviewing ? `REVIEWING (${count})` : `REVIEW MISSED ITEMS (${count})`;
+        
+        if (count === 0) {
+            btn.disabled = true;
+            btn.classList.remove('has-data');
+            if(state.isReviewing) { state.isReviewing = false; quitGame(); } // Exit if empty
+        } else {
+            btn.disabled = false;
+            btn.classList.add('has-data');
+        }
+    }
+
+    function addMissed(item) {
+        // Identify by unique prop: w (lit) or q (sci)
+        const key = item.w || item.q;
+        const exists = state.missed.some(i => (i.w || i.q) === key);
+        if(!exists) {
+            state.missed.push(item);
+            saveData();
+        }
+    }
+
+    function removeMissed(item) {
+        if(!state.isReviewing) return;
+        const key = item.w || item.q;
+        state.missed = state.missed.filter(i => (i.w || i.q) !== key);
+        saveData();
+    }
+
+    function resetData() {
+        if(confirm("Reset XP and Missed Items?")) {
+            state.xp = 0; state.missed = []; state.isReviewing = false;
+            saveData();
+        }
+    }
+
+    function startReview() {
+        if(state.missed.length === 0) return;
+        state.isReviewing = true;
+        state.pool = shuffle([...state.missed]);
+        // Auto-detect type based on first item to route correctly? 
+        // Mixed review is complex. Let's just use Cards for mixed review for now.
+        // Or force user to review via specific subject logic?
+        // Simplest: Generic Flash Cards for Mixed Review
+        startGame('cards');
+    }
+
+    function setSubject(sub) {
+        state.subject = sub;
+        state.isReviewing = false;
+        document.getElementById('tab-lit').className = sub === 'lit' ? 'subject-btn active' : 'subject-btn';
+        document.getElementById('tab-sci').className = sub === 'sci' ? 'subject-btn active' : 'subject-btn';
+        updateMenu();
+    }
+
+    function updateMenu() {
+        const grid = document.getElementById('menu-grid');
+        grid.innerHTML = '';
+        
+        if (state.subject === 'lit') {
+            grid.innerHTML += `<button class="btn activity-btn" onclick="startGame('lit-quiz')"><span>[?]</span> Definitions</button>`;
+            grid.innerHTML += `<button class="btn activity-btn" onclick="startGame('lit-spell')"><span>(o_o)</span> Flash & Spell</button>`;
+            grid.innerHTML += `<button class="btn activity-btn" onclick="startGame('cards')"><span>[ ]</span> Flash Cards</button>`;
+        } else {
+            grid.innerHTML += `<button class="btn activity-btn" onclick="startGame('sci-cloze')"><span>[...]</span> Lab Notes</button>`;
+            grid.innerHTML += `<button class="btn activity-btn" onclick="startGame('sci-sort')"><span>📂</span> Concept Sort</button>`;
+            grid.innerHTML += `<button class="btn activity-btn" onclick="startGame('sci-quiz')"><span>[?]</span> Concepts</button>`;
+            grid.innerHTML += `<button class="btn activity-btn" onclick="startGame('cards')"><span>[ ]</span> Study Cards</button>`;
+        }
+    }
+
+    function getPool() {
+        if(state.isReviewing) return [...state.missed];
+        return state.subject === 'lit' ? [...LIT_DATA] : [...SCI_DATA];
+    }
+
+    function shuffle(arr) { 
+        let a = [...arr];
+        return a.sort(() => Math.random() - 0.5); 
+    }
+    function cleanString(s) { return s.trim().toLowerCase(); }
+
+    function startGame(mode) {
+        state.pool = shuffle(getPool());
+        if(state.pool.length === 0) { alert("No items!"); return; }
+        
+        state.currentIndex = 0;
+        state.inputMode = document.getElementById('input-mode').value;
+        state.currentActivity = mode;
+
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        
+        document.querySelectorAll('.feedback-area').forEach(el => {
+            el.className = 'feedback-area'; el.innerHTML = '';
+        });
+
+        if (mode === 'lit-quiz') startQuiz(true); 
+        else if (mode === 'sci-quiz') startQuiz(false); 
+        else if (mode === 'sci-cloze') startCloze();
+        else if (mode === 'sci-sort') startSort();
+        else if (mode === 'lit-spell') startSpell();
+        else if (mode === 'cards') startCards();
+    }
+
+    function quitGame() {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('start-screen').classList.add('active');
+        state.isReviewing = false;
+        updateReviewBtn();
+    }
+
+    function handleTurnResult(isCorrect, feedbackElId, nextFn, correctTxt, item) {
+        const feedback = document.getElementById(feedbackElId);
+        const win = document.getElementById('main-window');
+        
+        feedback.className = 'feedback-area';
+        win.classList.remove('shake-effect');
+
+        if (isCorrect) {
+            state.xp += 10; 
+            if(state.isReviewing) removeMissed(item);
+            else saveData(); // Save XP
+
+            feedback.classList.add('correct-state');
+            feedback.innerHTML = "CORRECT!";
+            setTimeout(() => {
+                feedback.className = 'feedback-area';
+                state.currentIndex++;
+                if(state.currentIndex >= state.pool.length) state.currentIndex = 0;
+                nextFn();
+            }, 1000);
+        } else {
+            addMissed(item);
+            void win.offsetWidth; win.classList.add('shake-effect');
+            feedback.classList.add('wrong-state');
+            feedback.innerHTML = `ANSWER: ${correctTxt}`;
+            setTimeout(() => {
+                feedback.className = 'feedback-area';
+                state.currentIndex++;
+                if(state.currentIndex >= state.pool.length) state.currentIndex = 0;
+                nextFn();
+            }, 3000);
+        }
+    }
+
+    // === QUIZ (Shared) ===
+    function startQuiz(isLit) {
+        document.getElementById('quiz-screen').classList.add('active');
+        document.getElementById('quiz-title').innerText = isLit ? "Definitions" : "Concepts";
+        loadQuiz();
+    }
+
+    function loadQuiz() {
+        const item = state.pool[state.currentIndex];
+        const isLit = (item.w !== undefined); // Detect type by property
+        
+        const promptText = isLit ? item.d : item.q.replace('___', '[ ... ]'); // Hide blank answer in quiz mode
+        const answerText = isLit ? item.w : item.a;
+
+        document.getElementById('quiz-prompt').innerText = isLit ? "Definition:" : "Question:";
+        document.getElementById('quiz-main').innerText = promptText;
+        document.getElementById('quiz-feedback').innerHTML = "";
+        
+        const area = document.getElementById('quiz-area');
+        area.innerHTML = '';
+
+        if (state.inputMode === 'choice') {
+            area.className = 'choices-grid';
+            let distractors = shuffle(state.pool.filter(x => x !== item)).slice(0, 3);
+            let choices = shuffle([item, ...distractors]);
+            
+            choices.forEach(c => {
+                const btn = document.createElement('button');
+                // Handle mixed types in review mode
+                const txt = (c.w !== undefined) ? c.w : c.a;
+                btn.className = 'btn'; btn.innerText = txt;
+                btn.onclick = () => {
+                    Array.from(area.children).forEach(b => b.disabled = true);
+                    handleTurnResult(txt === answerText, 'quiz-feedback', loadQuiz, answerText, item);
+                };
+                area.appendChild(btn);
+            });
+        } else {
+            area.className = '';
+            const input = document.createElement('input');
+            input.type = 'text'; input.placeholder = 'Type answer...'; input.autocomplete = 'off';
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-block'; btn.innerText = 'Submit'; btn.style.marginTop = '10px';
+            
+            btn.onclick = () => {
+                input.disabled = true; btn.disabled = true;
+                handleTurnResult(cleanString(input.value) === cleanString(answerText), 'quiz-feedback', loadQuiz, answerText, item);
+            };
+            area.appendChild(input); area.appendChild(btn); input.focus();
+        }
+    }
+
+    // === CLOZE (Science - Typing Default) ===
+    function startCloze() {
+        document.getElementById('cloze-screen').classList.add('active');
+        loadCloze();
+    }
+
+    function loadCloze() {
+        const item = state.pool[state.currentIndex];
+        state.clozeAns = item.a;
+
+        const parts = item.q.split('___');
+        const container = document.getElementById('cloze-container');
+        container.innerHTML = '';
+        
+        // Construct Sentence with Input
+        if(parts.length > 1) {
+            container.innerHTML = `${parts[0]} <input type="text" id="cloze-input" class="cloze-input" autocomplete="off"> ${parts[1]}`;
+        } else {
+            // Fallback if no blank found
+            container.innerHTML = `${item.q} <br><input type="text" id="cloze-input" class="cloze-input" autocomplete="off">`;
+        }
+
+        document.getElementById('cloze-feedback').innerHTML = "";
+        
+        // Auto-focus
+        setTimeout(() => {
+            const inp = document.getElementById('cloze-input');
+            if(inp) inp.focus();
+        }, 100);
+    }
+
+    function checkCloze() {
+        const inp = document.getElementById('cloze-input');
+        const btn = document.getElementById('cloze-check-btn');
+        if(!inp || inp.disabled) return;
+        
+        inp.disabled = true; btn.disabled = true;
+        handleTurnResult(cleanString(inp.value) === cleanString(state.clozeAns), 'cloze-feedback', loadCloze, state.clozeAns, state.pool[state.currentIndex]);
+    }
+
+    // === SORT (Science) ===
+    function startSort() {
+        document.getElementById('sort-screen').classList.add('active');
+        loadSort();
+    }
+    function loadSort() {
+        const item = state.pool[state.currentIndex];
+        document.getElementById('sort-term').innerText = item.a || item.w; // Use Answer/Word
+        document.getElementById('sort-feedback').innerHTML = "";
+    }
+    function checkSort(category) {
+        const item = state.pool[state.currentIndex];
+        // Inferred categories from data. Using Includes for robust check
+        const correct = (item.t === category) || (item.u === category); 
+        // Actually, let's simplify. Correct if item.t matches clicked cat.
+        const isRight = (item.t === category);
+        
+        handleTurnResult(isRight, 'sort-feedback', loadSort, item.t, item);
+    }
+
+    // === SPELL (Lit) ===
+    function startSpell() {
+        document.getElementById('quiz-screen').classList.add('active');
+        document.getElementById('quiz-title').innerText = "Flash & Spell";
+        loadSpell();
+    }
+
+    function loadSpell() {
+        const item = state.pool[state.currentIndex];
+        const area = document.getElementById('quiz-area');
+        const feedback = document.getElementById('quiz-feedback');
+        
+        // Phase 1: Show
+        document.getElementById('quiz-prompt').innerText = "Memorize:";
+        document.getElementById('quiz-main').innerText = item.w;
+        area.innerHTML = `<div style="text-align:center; font-style:italic;">${item.d}</div>`;
+        feedback.innerHTML = "";
+
+        setTimeout(() => {
+            // Phase 2: Hide & Type
+            document.getElementById('quiz-prompt').innerText = "Type the word:";
+            document.getElementById('quiz-main').innerText = "???";
+            area.innerHTML = '';
+            
+            const input = document.createElement('input');
+            input.type = 'text'; input.autocomplete='off';
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-block'; btn.innerText = 'Check'; btn.style.marginTop='10px';
+            
+            btn.onclick = () => {
+                input.disabled = true; btn.disabled = true;
+                handleTurnResult(cleanString(input.value) === cleanString(item.w), 'quiz-feedback', loadSpell, item.w, item);
+            };
+            area.appendChild(input); area.appendChild(btn); input.focus();
+        }, 2000);
+    }
+
+    // === CARDS ===
+    let cardFlipped = false;
+    function startCards() {
+        document.getElementById('cards-screen').classList.add('active');
+        renderCard();
+    }
+    function renderCard() {
+        const item = state.pool[state.currentIndex];
+        const content = document.getElementById('card-content');
+        cardFlipped = false;
+        
+        const frontText = item.w || item.q.replace('___', '...');
+        const backText = item.d || item.a;
+        
+        content.innerHTML = `<div class="main-word">${frontText}</div>`;
+        
+        content.onclick = () => {
+            cardFlipped = !cardFlipped;
+            if(cardFlipped) {
+                content.innerHTML = `<div style="font-size:1.4rem; font-weight:bold;">${backText}</div>`;
+            } else {
+                content.innerHTML = `<div class="main-word">${frontText}</div>`;
+            }
+        };
+        document.getElementById('card-count').innerText = `${state.currentIndex+1}/${state.pool.length}`;
+    }
+    function flipCard() { document.getElementById('card-content').click(); }
+    function nextCard() { state.currentIndex++; if(state.currentIndex>=state.pool.length) state.currentIndex=0; renderCard(); }
+    function prevCard() { state.currentIndex--; if(state.currentIndex<0) state.currentIndex=state.pool.length-1; renderCard(); }
+
+</script>
+</body>
+</html>
